@@ -21,7 +21,7 @@ while not done:
             done = True
 
     current_time = time.localtime()
-    minute = current_time.tm_min*
+    minute = current_time.tm_min
     second = current_time.tm_sec
     
     minute_angle = minute * 6 + 45
