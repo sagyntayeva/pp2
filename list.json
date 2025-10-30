@@ -1,9 +1,0 @@
-{
-  "anime": [
-    {"title": "Attack on Titan", "genre": "Action", "rating": 9.1},
-    {"title": "Death Note", "genre": "Mystery", "rating": 8.9},
-    {"title": "Demon Slayer", "genre": "Adventure", "rating": 8.7},
-    {"title": "Naruto", "genre": "Action", "rating": 8.3},
-    {"title": "Your Name", "genre": "Romance", "rating": 9.0}
-  ]
-}
