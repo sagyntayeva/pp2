@@ -1,13 +1,16 @@
 import pygame
 import os
+import time
 
 pygame.init()
 pygame.mixer.init()
 screen = pygame.display.set_mode((300, 200))
 pygame.display.set_caption("Music Player")
 
+
 img = pygame.image.load("/Users/ranid/OneDrive/Desktop/pp2/photo.jpg").convert_alpha()
 img = pygame.transform.scale(img, (300, 200))
+
 
 folder = "/Users/ranid/OneDrive/Desktop/pp2/music"
 tracks = []
@@ -19,7 +22,11 @@ if not tracks:
     exit()
 
 current = 0
-paused = False  
+playing = True
+running = True
+last_press_time = 0
+key_delay_time = 0.3 
+
 
 def play():
     pygame.mixer.music.load(os.path.join(folder, tracks[current]))
@@ -31,48 +38,55 @@ def stop():
     print("Music stopped")
 
 def next_track():
-    global current, paused
-    current = current + 1
+    global current, playing
+    current = (current + 1) % len(tracks)
     play()
-    paused = False
+    playing = True
 
 def prev_track():
-    global current, paused
-    current = current - 1 
+    global current, playing
+    current = (current - 1) % len(tracks)
     play()
-    paused = False
+    playing = True
+
+
+def key_delay():
+    global last_press_time
+    if time.time() - last_press_time > key_delay_time:
+        last_press_time = time.time()
+        return True
+    return False
 
 play()
 
+clock = pygame.time.Clock()
 
-while True:
+while running:
     screen.blit(img, (0, 0))
     pygame.display.flip()
-    
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-             False
-        
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_SPACE:
-                if paused:
-                    pygame.mixer.music.unpause()
-                    paused = False
-                    print("Resumed")
-                else:
-                    pygame.mixer.music.pause()
-                    paused = True
-                    print("Paused")
-            
-            elif event.key == pygame.K_s:
-                stop()
-                paused = False
-            
-            elif event.key == pygame.K_d:
-                next_track()
-            
-            elif event.key == pygame.K_a:
-                prev_track()
+            running = False
+
+    keys = pygame.key.get_pressed()
+
+    if keys[pygame.K_SPACE] and key_delay():
+        if playing:
+            pygame.mixer.music.pause()
+            playing = False
+            print("Paused")
+        else:
+            pygame.mixer.music.unpause()
+            playing = True
+            print("Resumed")
+
+    if keys[pygame.K_LEFT] and key_delay():
+        prev_track()
+
+    if keys[pygame.K_RIGHT] and key_delay():
+        next_track()
+
+    clock.tick(60)
 
 pygame.quit()
-
