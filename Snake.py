@@ -1,129 +1,137 @@
 import pygame
 import random
 
-# Инициализация Pygame
 pygame.init()
 
+# Окно и сетка
+W = 600
+H = 400
+CELL = 20
+COLS = W // CELL
+ROWS = H // CELL
 
-WIDTH, HEIGHT = 600, 400
-CELL_SIZE = 20 
-GRID_WIDTH = WIDTH // CELL_SIZE
-GRID_HEIGHT = HEIGHT // CELL_SIZE
-
-
+# Цвета
 WHITE = (255, 255, 255)
 GREEN = (0, 255, 0)
 RED = (255, 0, 0)
-BLUE = (0, 0, 255)
 BLACK = (0, 0, 0)
 
-
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption("Snake Game")
-
+screen = pygame.display.set_mode((W, H))
+pygame.display.set_caption("Zmeika")
 
 class Snake:
+    
     def __init__(self):
-        self.body = [(5, 5)]  
-        self.direction = (1, 0) 
+        # начальная длина змейки
+        self.body = [(6, 8), (5, 8), (4, 8)]
+        # направление: (1,0) вправо, (-1,0) влево, (0,1) вниз, (0,-1) вверх
+        self.dir = (1, 0)
 
     def move(self):
-        head_x, head_y = self.body[0]
-        new_head = (head_x + self.direction[0], head_y + self.direction[1])
-        
-        # Проверка столкновения со стенами
-        if new_head[0] < 0 or new_head[0] >= GRID_WIDTH or new_head[1] < 0 or new_head[1] >= GRID_HEIGHT:
+        # сдвигаем голову на одну клетку
+        hx, hy = self.body[0]
+        nx = hx + self.dir[0]
+        ny = hy + self.dir[1]
+        new = (nx, ny)
+
+        # проверка выхода за границы
+        if nx < 0 or nx >= COLS or ny < 0 or ny >= ROWS:
             return False
-        
-        # Проверка столкновения с самой собой
-        if new_head in self.body:
+
+        # проверка, не врезалась ли в себя
+        if new in self.body:
             return False
-        
-        self.body.insert(0, new_head)
+
+        # вставляем новую голову
+        self.body.insert(0, new)
         return True
 
-    def grow(self):
-        pass 
-
-    def shrink(self):
-        self.body.pop()
-
-    def change_direction(self, direction):
-        if (direction[0] * -1, direction[1] * -1) != self.direction:
-            self.direction = direction
+    def change_dir(self, d):
+        # нельзя сразу развернуться на 180 градусов
+        if (d[0], d[1]) != (-self.dir[0], -self.dir[1]):
+            self.dir = d
 
     def draw(self):
-        for segment in self.body:
-            pygame.draw.rect(screen, GREEN, (segment[0] * CELL_SIZE, segment[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE))
-
+        # рисуем каждую клетку тела змейки
+        for x, y in self.body:
+            pygame.draw.rect(screen, GREEN, (x * CELL, y * CELL, CELL, CELL))
 
 class Food:
     def __init__(self, snake_body):
-        self.position = self.generate_food_position(snake_body)
+        # создаём еду в случайном месте, где нет змейки
+        self.pos = self.new_pos(snake_body)
 
-    def generate_food_position(self, snake_body):
+    def new_pos(self, snake_body):
+        # случайная клетка, где нет змеи
         while True:
-            x = random.randint(0, GRID_WIDTH - 1)
-            y = random.randint(0, GRID_HEIGHT - 1)
-            if (x, y) not in snake_body:  # Еда не должна быть на змеее
+            x = random.randint(0, COLS - 1)
+            y = random.randint(0, ROWS - 1)
+            if (x, y) not in snake_body:
                 return (x, y)
 
     def draw(self):
-        pygame.draw.rect(screen, RED, (self.position[0] * CELL_SIZE, self.position[1] * CELL_SIZE, CELL_SIZE, CELL_SIZE))
+        # рисуем еду
+        x, y = self.pos
+        pygame.draw.rect(screen, RED, (x * CELL, y * CELL, CELL, CELL))
 
+def main():
+    snake = Snake()
+    food = Food(snake.body)
+    score = 0
+    level = 1
+    clock = pygame.time.Clock()
+    speed = 6  # начальная скорость
+    running = True
 
-snake = Snake()
-food = Food(snake.body)
-score = 0
-level = 1
-speed = 5  
-clock = pygame.time.Clock()
-running = True
+    while running:
+        screen.fill(BLACK)
 
-while running:
-    screen.fill(BLACK)
-    
-    
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            running = False
-        elif event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_UP:
-                snake.change_direction((0, -1))
-            elif event.key == pygame.K_DOWN:
-                snake.change_direction((0, 1))
-            elif event.key == pygame.K_LEFT:
-                snake.change_direction((-1, 0))
-            elif event.key == pygame.K_RIGHT:
-                snake.change_direction((1, 0))
-    
-  
-    if not snake.move():
-        running = False  # Если столкнулась со стеной 
-    
-    # Проверка поедания еды
-    if snake.body[0] == food.position:
-        score += 1
-        snake.grow()
-        food = Food(snake.body)
-        
-        # Повышение уровня каждые 3 очка
-        if score % 3 == 0:
-            level += 1
-            speed += 2 
-    else:
-        snake.shrink()  
+        # обработка событий клавиатуры
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            elif event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_UP:
+                    snake.change_dir((0, -1))
+                elif event.key == pygame.K_DOWN:
+                    snake.change_dir((0, 1))
+                elif event.key == pygame.K_LEFT:
+                    snake.change_dir((-1, 0))
+                elif event.key == pygame.K_RIGHT:
+                    snake.change_dir((1, 0))
 
-    
-    snake.draw()
-    food.draw()
-    
-    # Отображение счета и уровня
-    font = pygame.font.Font(None, 36)
-    score_text = font.render(f"Score: {score}  Level: {level}", True, WHITE)
-    screen.blit(score_text, (10, 10))
-    
-    pygame.display.flip()
-    clock.tick(speed)
+        # двигаем змейку, если False — игра окончена
+        if not snake.move():
+            break
 
-pygame.quit()
+        # если съели еду — увеличиваем счёт и создаём новую еду
+        if snake.body[0] == food.pos:
+            score += 1
+            food = Food(snake.body)
+        else:
+            # иначе просто удаляем хвост 
+            snake.body.pop()
+
+        # увеличение уровня каждые 5 очков
+        new_level = score // 5 + 1
+        if new_level > level:
+            level = new_level
+            speed += 1  # увеличиваем скорость игры
+
+        # рисуем змейку и еду
+        snake.draw()
+        food.draw()
+
+        # выводим счёт и уровень на экран
+        font = pygame.font.Font(None, 36)
+        text = font.render(f"Score: {score}   Level: {level}", True, WHITE)
+        screen.blit(text, (10, 10))
+
+        # обновляем экран
+        pygame.display.flip()
+        clock.tick(speed)
+
+    pygame.quit()
+
+if __name__ == '__main__':
+    main()
